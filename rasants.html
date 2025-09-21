@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ca">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Càlcul de rasants</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="icon" href="icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <style>
+        :root {
+            --brand: #2c3e50;
+            --bg: #f7f8fa;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: system-ui, sans-serif;
+            background: var(--bg);
+        }
+
+        .card {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .08);
+        }
+
+        h2 {
+            margin: 0 0 14px;
+            text-align: center;
+            color: var(--brand);
+        }
+
+        .grid {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .field {
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .field label {
+            font-weight: 600;
+            font-size: .95rem;
+        }
+
+        .field input {
+            width: 100%;
+            margin-top: 6px;
+            padding: 12px 10px;
+            font-size: 1.05rem;
+            border: 1px solid #dcdcdc;
+            border-radius: 10px;
+        }
+
+        .field input:focus {
+            outline: none;
+            border-color: #9bb1c8;
+            box-shadow: 0 0 0 3px rgba(155, 177, 200, .25);
+        }
+
+        .actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: 0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        nav {
+            margin: 8px 0 16px;
+            text-align: center;
+        }
+
+        nav a {
+            margin: 0 10px;
+            color: var(--brand);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .primary {
+            background: var(--brand);
+            color: #fff;
+        }
+
+        .secondary {
+            background: #eceff3;
+        }
+
+        .hint {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-size: .95rem;
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #555;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h2>📉 Càlcul de rasants</h2>
+
+        <nav>
+            <a href="index.html">⬅️ Inici</a> |
+            <a href="triangle.html">📐 Triangle</a> |
+            <a href="pendent.html">↕️ Pendent</a> |
+            <a href="cotes.html">📏 Cotes relatives</a> |
+            <a href="about.html">ℹ️ Sobre l’app</a>
+        </nav>
+
+        <div class="grid">
+            <div class="field">
+                <label for="C1">Cota inicial (C1)</label>
+                <input id="C1" type="number" inputmode="decimal" step="any" placeholder="Ex: 100.00" />
+            </div>
+            <div class="field">
+                <label for="C2">Cota final (C2)</label>
+                <input id="C2" type="number" inputmode="decimal" step="any" placeholder="Ex: 102.50" />
+            </div>
+            <div class="field">
+                <label for="D">Distància horitzontal (m)</label>
+                <input id="D" type="number" inputmode="decimal" step="any" placeholder="Ex: 25" />
+            </div>
+            <div class="field">
+                <label for="DH">ΔH (diferència de cota)</label>
+                <input id="DH" type="number" inputmode="decimal" step="any" placeholder="Resultat" disabled />
+            </div>
+            <div class="field">
+                <label for="P">Pendent (%)</label>
+                <input id="P" type="number" inputmode="decimal" step="any" placeholder="Resultat" disabled />
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="reset" class="secondary">🧹 Esborrar</button>
+            <button id="calc" class="primary">⇄ Calcular</button>
+        </div>
+
+        <p class="hint">Introdueix <strong>C1, C2 i la distància</strong> i prem <em>Calcular</em>.</p>
+        <footer>Versió 1.0 · Creat per <strong>Salvador Rodríguez</strong></footer>
+    </div>
+
+    <script>
+        const C1 = document.getElementById("C1");
+        const C2 = document.getElementById("C2");
+        const D = document.getElementById("D");
+        const DH = document.getElementById("DH");
+        const P = document.getElementById("P");
+        const resetBtn = document.getElementById("reset");
+        const calcBtn = document.getElementById("calc");
+
+        function round3(n) { return (Math.round(n * 1000) / 1000).toString(); }
+
+        function calcular() {
+            const c1 = parseFloat(C1.value.replace(",", "."));
+            const c2 = parseFloat(C2.value.replace(",", "."));
+            const d = parseFloat(D.value.replace(",", "."));
+
+            if (isNaN(c1) || isNaN(c2) || isNaN(d) || d <= 0) {
+                DH.value = "";
+                P.value = "";
+                return;
+            }
+
+            const dh = c2 - c1;
+            const pend = (dh / d) * 100;
+
+            DH.value = round3(dh);
+            P.value = round3(pend);
+        }
+
+        function clearAll() {
+            [C1, C2, D, DH, P].forEach(el => { el.value = ""; });
+        }
+
+        resetBtn.addEventListener("click", clearAll);
+        calcBtn.addEventListener("click", calcular);
+    </script>
+</body>
+
+</html>
