@@ -1,4 +1,4 @@
-https://sentex78.github.io/densitats/
+https://sentex78.github.io/replanteig/
 # zip -r "backups/$(date +'%Y_%m_%d_%H%M')_replanteig.zip" * -x "backups/*" "*.zip"
 
 Si tienes code instalado en tu terminal, ejecuta:
