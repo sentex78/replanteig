@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conversió d'escales de plànol</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2c3e50">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <style>
+    :root { --brand:#2c3e50; --bg:#f7f8fa; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; padding:24px; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); }
+    .card{ max-width:720px; margin:0 auto; background:#fff; padding:20px; border-radius:14px; box-shadow:0 6px 24px rgba(0,0,0,.08); }
+    h2{ margin:0 0 14px; text-align:center; color:var(--brand); }
+    .grid{ display:flex; gap:14px; }
+    .field{ flex:1; }
+    .field label{ font-weight:600; font-size:.95rem; }
+    .field input{ width:100%; margin-top:6px; padding:12px 10px; font-size:1.05rem; border:1px solid #dcdcdc; border-radius:10px; }
+    .field input:focus{ outline:none; border-color:#9bb1c8; box-shadow:0 0 0 3px rgba(155,177,200,.25); }
+    .actions{ margin-top:14px; display:flex; gap:10px; }
+    button{ flex:1; padding:12px; border:0; border-radius:10px; cursor:pointer; font-weight:700; }
+    nav{ margin:8px 0 16px; text-align:center; }
+    nav a{ margin:0 10px; color:var(--brand); text-decoration:none; font-weight:bold; }
+    .primary{ background:var(--brand); color:#fff; }
+    .secondary{ background:#eceff3; }
+    .hint{ text-align:center; color:#666; margin-top:10px; font-size:.95rem; }
+    footer{ margin-top:30px; font-size:.9em; color:#555; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📏 Conversió d'escales de plànol</h2>
+
+    <nav>
+      <a href="index.html">⬅️ Inici</a> |
+      <a href="triangle.html">📐 Triangle</a> |
+      <a href="pendent.html">↕️ Pendent</a> |
+      <a href="cotes.html">📏 Cotes relatives</a> |
+      <a href="rasants.html">📉 Rasants</a> |
+      <a href="camions.html">🚛 Càrregues per camió</a> |
+      <a href="about.html">ℹ️ Sobre l’app</a>
+    </nav>
+
+    <div class="grid">
+      <div class="field">
+        <label for="S">Escala (1 : S)</label>
+        <input id="S" type="number" inputmode="decimal" step="any" min="0" placeholder="Ex: 100 (per 1:100)" />
+      </div>
+      <div class="field">
+        <label for="REAL">Mida real (m)</label>
+        <input id="REAL" type="number" inputmode="decimal" step="any" min="0" placeholder="Ex: 12.5" />
+      </div>
+      <div class="field">
+        <label for="PLAN">Plànol (mm)</label>
+        <input id="PLAN" type="number" inputmode="decimal" step="any" min="0" placeholder="Ex: 125" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="reset" class="secondary">🧹 Esborrar</button>
+      <button id="calc" class="primary">⇄ Calcular</button>
+    </div>
+
+    <p class="hint">
+      Fórmules: PLAN(mm) = REAL(m) × 1000 / S ·· REAL(m) = PLAN(mm) × S / 1000 ·· S = REAL(m) × 1000 / PLAN(mm)
+    </p>
+    <footer>Versió 1.0 · Creat per <strong>Salvador Rodríguez</strong></footer>
+  </div>
+
+  <script>
+    const S = document.getElementById("S");
+    const REAL = document.getElementById("REAL");
+    const PLAN = document.getElementById("PLAN");
+    const resetBtn = document.getElementById("reset");
+    const calcBtn  = document.getElementById("calc");
+
+    let afterCalc = false;
+
+    function countFilled(){ return [S,REAL,PLAN].filter(el => el.value.trim() !== "").length; }
+    function toNum(el){ const v = parseFloat(el.value.replace(",", ".")); return isNaN(v) ? NaN : v; }
+    function round3(n){ return (Math.round(n*1000)/1000).toString(); }
+
+    function handleInput(){
+      if(afterCalc){ clearAll(); afterCalc = false; return; }
+      const filled = [S,REAL,PLAN].filter(el => el.value.trim() !== "");
+      const empty  = [S,REAL,PLAN].filter(el => el.value.trim() === "");
+      if(filled.length === 2) empty[0].disabled = true; else [S,REAL,PLAN].forEach(el => el.disabled = false);
+    }
+
+    function calcular(){
+      if(countFilled() !== 2) return;
+
+      const s = S.value.trim()==="" ? NaN : toNum(S);
+      const r = REAL.value.trim()==="" ? NaN : toNum(REAL);
+      const p = PLAN.value.trim()==="" ? NaN : toNum(PLAN);
+
+      if (isNaN(p) && !isNaN(r) && !isNaN(s) && s>0){
+        PLAN.value = round3((r * 1000) / s);
+      } else if (isNaN(r) && !isNaN(p) && !isNaN(s)){
+        REAL.value = round3((p * s) / 1000);
+      } else if (isNaN(s) && !isNaN(r) && !isNaN(p) && p>0){
+        S.value = round3((r * 1000) / p);
+      }
+
+      [S,REAL,PLAN].forEach(el => el.disabled = false);
+      afterCalc = true;
+    }
+
+    function clearAll(){ [S,REAL,PLAN].forEach(el => { el.value=""; el.disabled=false; }); }
+
+    [S,REAL,PLAN].forEach(el => el.addEventListener("input", handleInput));
+    resetBtn.addEventListener("click", () => { clearAll(); afterCalc=false; });
+    calcBtn.addEventListener("click", calcular);
+  </script>
+</body>
+</html>

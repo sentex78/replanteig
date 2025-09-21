@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transport de càrregues per camió</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2c3e50">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <style>
+    :root { --brand:#2c3e50; --bg:#f7f8fa; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; padding:24px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); }
+    .card{ max-width:900px; margin:0 auto; background:#fff; padding:20px; border-radius:14px; box-shadow:0 6px 24px rgba(0,0,0,.08); }
+    h2{ margin:0 0 14px; text-align:center; color:var(--brand); }
+    .selector{ margin-bottom:20px; }
+    .selector label{ font-weight:600; display:block; margin-bottom:6px; }
+    .selector select{ width:100%; padding:12px 10px; font-size:1.05rem; border:1px solid #dcdcdc; border-radius:10px; }
+    .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .field label{ font-weight:600; font-size:.95rem; }
+    .field input{ width:100%; margin-top:6px; padding:12px 10px; font-size:1.05rem; border:1px solid #dcdcdc; border-radius:10px; }
+    .field input:focus, .selector select:focus{ outline:none; border-color:#9bb1c8; box-shadow:0 0 0 3px rgba(155,177,200,.25); }
+    .actions{ margin-top:14px; display:flex; gap:10px; }
+    button{ flex:1; padding:12px; border:0; border-radius:10px; cursor:pointer; font-weight:700; }
+    nav{ margin:8px 0 16px; text-align:center; }
+    nav a{ margin:0 10px; color:var(--brand); text-decoration:none; font-weight:bold; }
+    .primary{ background:var(--brand); color:#fff; }
+    .secondary{ background:#eceff3; }
+    .hint{ text-align:center; color:#666; margin-top:10px; font-size:.95rem; }
+    footer{ margin-top:30px; font-size:.9em; color:#555; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🚛 Transport de càrregues per camió</h2>
+
+    <nav>
+      <a href="index.html">⬅️ Inici</a> |
+      <a href="triangle.html">📐 Triangle</a> |
+      <a href="pendent.html">↕️ Pendent</a> |
+      <a href="cotes.html">📏 Cotes relatives</a> |
+      <a href="rasants.html">📉 Rasants</a> |
+      <a href="escales.html">📏 Escales</a> |
+      <a href="escales.html">📏 Escales de plànol</a> |
+      <a href="about.html">ℹ️ Sobre l’app</a>
+    </nav>
+
+    <!-- Selector de capacitats -->
+    <div class="selector">
+      <label for="Cselect">Capacitat típica de camió (Tn)</label>
+      <select id="Cselect">
+        <option value="">-- Selecciona tipus de camió --</option>
+        <option value="18">Camió 2 eixos ≈ 18 Tn</option>
+        <option value="25">Tràiler estàndard ≈ 25 Tn</option>
+        <option value="27">Tràiler 5 eixos ≈ 27 Tn</option>
+        <option value="30">Tràiler 6 eixos ≈ 30 Tn</option>
+        <option value="32">Dúmper gran ≈ 32 Tn</option>
+      </select>
+    </div>
+
+    <!-- Tres caixes sempre en línia -->
+    <div class="grid">
+      <div class="field">
+        <label for="T">Pes total (Tn)</label>
+        <input id="T" type="number" step="any" min="0" placeholder="Ex: 250" />
+      </div>
+      <div class="field">
+        <label for="C">Capacitat camió (Tn)</label>
+        <input id="C" type="number" step="any" min="0" placeholder="O introdueix manualment" />
+      </div>
+      <div class="field">
+        <label for="N">Nº viatges</label>
+        <input id="N" type="number" step="1" min="0" placeholder="Ex: 13" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="reset" class="secondary">🧹 Esborrar</button>
+      <button id="calc" class="primary">⇄ Calcular</button>
+    </div>
+
+    <p class="hint">Introdueix <strong>dos valors</strong> i prem <em>Calcular</em> per obtenir el tercer (N sempre s’arrodoneix cap amunt).</p>
+    <footer>Versió 1.0 · Creat per <strong>Salvador Rodríguez</strong></footer>
+  </div>
+
+  <script>
+    const T = document.getElementById("T");
+    const C = document.getElementById("C");
+    const N = document.getElementById("N");
+    const Cselect = document.getElementById("Cselect");
+    const resetBtn = document.getElementById("reset");
+    const calcBtn  = document.getElementById("calc");
+
+    let afterCalc = false;
+
+    function countFilled(){ return [T,C,N].filter(el => el.value.trim() !== "").length; }
+    function toNum(el){ const v = parseFloat(el.value.replace(",", ".")); return isNaN(v) ? NaN : v; }
+    function round3(n){ return (Math.round(n*1000)/1000).toString(); }
+
+    function handleInput(){
+      if(afterCalc){ clearAll(); afterCalc = false; return; }
+      const filled = [T,C,N].filter(el => el.value.trim() !== "");
+      const empty  = [T,C,N].filter(el => el.value.trim() === "");
+      if(filled.length === 2) empty[0].disabled = true; else [T,C,N].forEach(el => el.disabled = false);
+    }
+
+    function calcular(){
+      if(countFilled() !== 2) return;
+
+      const t = T.value.trim()==="" ? NaN : toNum(T);
+      const c = C.value.trim()==="" ? NaN : toNum(C);
+      const n = N.value.trim()==="" ? NaN : toNum(N);
+
+      if (isNaN(n) && !isNaN(t) && !isNaN(c) && c>0){
+        N.value = Math.ceil(t/c);
+      } else if (isNaN(t) && !isNaN(n) && !isNaN(c)){
+        T.value = round3(n*c);
+      } else if (isNaN(c) && !isNaN(t) && !isNaN(n) && n>0){
+        C.value = round3(t/n);
+      }
+
+      [T,C,N].forEach(el => el.disabled = false);
+      afterCalc = true;
+    }
+
+    function clearAll(){ 
+      [T,C,N].forEach(el => { el.value=""; el.disabled=false; });
+      Cselect.value="";
+    }
+
+    [T,C,N].forEach(el => el.addEventListener("input", handleInput));
+    resetBtn.addEventListener("click", () => { clearAll(); afterCalc=false; });
+    calcBtn.addEventListener("click", calcular);
+
+    // Reinicia només si T i N tenen valor
+    Cselect.addEventListener("change", () => {
+      if(Cselect.value !== ""){
+        C.value = Cselect.value;
+        if(T.value.trim() !== "" && N.value.trim() !== ""){
+          T.value = "";
+          N.value = "";
+        }
+      } else {
+        C.value = "";
+      }
+    });
+  </script>
+</body>
+</html>
